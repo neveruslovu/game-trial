@@ -10,7 +10,7 @@ class Fly(pygame.sprite.Sprite):
         # Загрузка спрайта
         try:
             self.image = asset_loader.load_image("enemies/fly.png", 0.6)
-        except:
+        except FileNotFoundError:
             # Заглушка если спрайт не загрузился
             self.image = pygame.Surface((40, 30))
             self.image.fill((200, 100, 200))  # Фиолетовый цвет
@@ -21,7 +21,9 @@ class Fly(pygame.sprite.Sprite):
         self.speed = 80
         self.direction = 1
         self.velocity = pygame.math.Vector2(0, 0)
-        self.facing_right = True
+        self.facing_right = False
+        self.start_x = x
+        self.move_range = 600
         
         # Состояния
         self.health_component = HealthComponent(20) # У мух меньше здоровья
@@ -35,9 +37,6 @@ class Fly(pygame.sprite.Sprite):
         self.is_hurt = False
         self.hurt_timer = 0
         self.hurt_duration = 0.3
-
-        self.range_min=400
-        self.range_max=600
 
         # Хитбокс
         self.hitbox = pygame.Rect(0, 0, 30, 25)
@@ -84,9 +83,8 @@ class Fly(pygame.sprite.Sprite):
         elif self.velocity.x < 0:
             self.facing_right = False
     
-        # Проверка выхода за границы уровня
-        level_width = level.width
-        if self.rect.right > level_width - 50 or self.rect.left < 50:
+        # Проверка выхода за границы диапазона
+        if self.rect.x > self.start_x + self.move_range or self.rect.x < self.start_x:
             self.direction *= -1
 
     def take_damage(self, amount):
@@ -118,7 +116,7 @@ class Fly(pygame.sprite.Sprite):
         # Загрузка спрайта смерти
         try:
             self.image = asset_loader.load_image("enemies/fly_dead.png", 0.6)
-        except:
+        except FileNotFoundError:
             pass # Если спрайт не найден, останется старый
 
 
@@ -127,7 +125,7 @@ class Fly(pygame.sprite.Sprite):
         screen_rect = self.rect.move(-camera.offset.x, -camera.offset.y)
         
         # Отрисовка спрайта
-        if not self.facing_right:
+        if self.facing_right:
             flipped_sprite = pygame.transform.flip(self.image, True, False)
             screen.blit(flipped_sprite, screen_rect)
         else:

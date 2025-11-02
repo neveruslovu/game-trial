@@ -9,7 +9,7 @@ class Snail(pygame.sprite.Sprite):
         # Загрузка спрайта
         try:
             self.image = asset_loader.load_image("enemies/snail.png", 0.6)
-        except:
+        except FileNotFoundError:
             # Заглушка если спрайт не загрузился
             self.image = pygame.Surface((40, 30))
             self.image.fill((150, 75, 0))  # Коричневый цвет
@@ -45,7 +45,6 @@ class Snail(pygame.sprite.Sprite):
     
     def update(self, dt, level):
         """Обновление улитки"""
-
         if self.is_dead:
             self.death_timer -= dt
             if self.death_timer <= 0:
@@ -85,8 +84,7 @@ class Snail(pygame.sprite.Sprite):
         # Движение по горизонтали
         self.velocity.x = self.speed * self.direction
     
-        # Сохраняем старую позицию
-        old_x, old_y = self.rect.x, self.rect.y
+        
     
         # Применяем движение
         self.rect.x += self.velocity.x * dt

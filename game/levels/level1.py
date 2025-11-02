@@ -10,7 +10,7 @@ from ..enemies.fly import Fly
 from ..items.items import Item
 from ..decorations import Decoration
 from ..asset_loader import asset_loader
-from ..enemies.saw import Saw
+from ..traps.saw import Saw
 from ..traps.spikes import Spikes
 
 class Level:
@@ -216,7 +216,8 @@ class Level:
                 elif enemy_type == "fly":
                     enemy = Fly(x, y)
                 elif enemy_type == "saw":
-                    enemy = Saw(x, y)
+                    saw = Saw(x, y)
+                    self.traps.add(saw)
                 
                 self.enemies.add(enemy)
                 print(f"✅ Враг {enemy_type} создан на позиции ({x}, {y})")
