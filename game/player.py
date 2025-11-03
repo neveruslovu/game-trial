@@ -220,17 +220,25 @@ class Player:
                 # Создаем точный хитбокс для определения направления
                 player_hitbox = self.get_actual_hitbox()
         
+                # 🔥 ИСПРАВЛЕНИЕ: Используем правильные границы для разных типов платформ
+                if hasattr(platform, 'collision_rect'):
+                    platform_left = platform.collision_rect.left
+                    platform_right = platform.collision_rect.right
+                else:
+                    platform_left = platform.rect.left
+                    platform_right = platform.rect.right
+                
                 # 🔥 УЛУЧШЕННОЕ ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЯ
                 if self.velocity_x > 0 or (self.rect.x > self.old_x):  # Движение вправо
                     # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
-                    self.rect.right = platform.rect.left + self.hitbox.x
+                    self.rect.right = platform_left + self.hitbox.x
                     self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
                     # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
                     self.blocked_right = True
                     
                 elif self.velocity_x < 0 or (self.rect.x < self.old_x):  # Движение влево
                     # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
-                    self.rect.left = platform.rect.right - self.hitbox.x
+                    self.rect.left = platform_right - self.hitbox.x
                     self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
                     # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
                     self.blocked_left = True
@@ -248,16 +256,24 @@ class Player:
             if self.check_collision(platform):
                 player_hitbox = self.get_actual_hitbox()
                 
+                # 🔥 ИСПРАВЛЕНИЕ: Используем правильные границы для разных типов платформ
+                if hasattr(platform, 'collision_rect'):
+                    platform_top = platform.collision_rect.top
+                    platform_bottom = platform.collision_rect.bottom
+                else:
+                    platform_top = platform.rect.top
+                    platform_bottom = platform.rect.bottom
+                
                 # 🔥 УЛУЧШЕННОЕ ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЯ
                 if self.velocity_y > 0:  # Падение вниз
-                    self.rect.bottom = platform.rect.top
+                    self.rect.bottom = platform_top
                     self.on_ground = True
                     self.is_jumping = False
                     self.velocity_y = 0
                     self.time_since_ground = 0
            
                 elif self.velocity_y < 0:  # Движение вверх
-                    self.rect.top = platform.rect.bottom
+                    self.rect.top = platform_bottom
                     self.velocity_y = 0                  
                 break
 
@@ -388,8 +404,6 @@ class Player:
             self.handle_horizontal_collisions(platforms)
         
         self.update_animation(moved)
-
-    
 
     def can_jump(self):
         return (self.on_ground or 

@@ -304,7 +304,10 @@ class Level:
             if hasattr(enemy, 'gravity') and not hasattr(enemy, 'rotation_speed'):
                 enemy.velocity.y += enemy.gravity * dt
             self.check_enemy_collisions(enemy)
-        
+
+        for trap in self.traps:
+            trap.update(dt,self)
+            
         if self.player:
             self.check_item_collection()
     

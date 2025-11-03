@@ -21,7 +21,7 @@ class Snail(pygame.sprite.Sprite):
         self.direction = 1
         self.velocity = pygame.math.Vector2(0, 0)
         self.gravity = 1500
-        self.facing_right = True
+        self.facing_right = False
         
         # Состояния
         self.health_component = HealthComponent(30)
@@ -148,7 +148,7 @@ class Snail(pygame.sprite.Sprite):
         screen_rect = self.rect.move(-camera.offset.x, -camera.offset.y)
         
         # Отрисовка спрайта
-        if not self.facing_right:
+        if self.facing_right:
             flipped_sprite = pygame.transform.flip(self.image, True, False)
             screen.blit(flipped_sprite, screen_rect)
         else:
