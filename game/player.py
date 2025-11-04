@@ -254,6 +254,11 @@ class Player:
                 continue
                 
             if self.check_collision(platform):
+                # 🔥 ОСОБАЯ ОБРАБОТКА ДЛЯ ТРЕУГОЛЬНИКОВ
+                if platform.platform_type == "triangle":
+                    self.handle_triangle_collision(platform)
+                    continue
+
                 player_hitbox = self.get_actual_hitbox()
                 
                 # 🔥 ИСПРАВЛЕНИЕ: Используем правильные границы для разных типов платформ
@@ -276,6 +281,32 @@ class Player:
                     self.rect.top = platform_bottom
                     self.velocity_y = 0                  
                 break
+
+    def handle_triangle_collision(self, triangle):
+        """Обрабатывает столкновение с треугольной платформой"""
+        player_hitbox = self.get_actual_hitbox()
+        
+        # Определяем, на какой части треугольника находится игрок
+        player_center_x = player_hitbox.centerx
+        triangle_left = triangle.rect.left
+        triangle_right = triangle.rect.right
+        triangle_top = triangle.rect.top
+        triangle_bottom = triangle.rect.bottom
+        
+        # Вычисляем относительную позицию игрока на треугольнике (0 до 1)
+        relative_x = (player_center_x - triangle_left) / triangle.rect.width
+        
+        # Треугольник: правый верхний → правый нижний → левый нижний
+        # Вычисляем максимальную высоту на этой X позиции
+        max_y = triangle_bottom - (triangle_bottom - triangle_top) * (1 - relative_x)
+        
+        # Если игрок ниже допустимой высоты, размещаем его на поверхности
+        if player_hitbox.bottom > max_y and self.velocity_y >= 0:
+            self.rect.bottom = max_y
+            self.on_ground = True
+            self.is_jumping = False
+            self.velocity_y = 0
+            self.time_since_ground = 0
 
     def get_actual_hitbox(self):
         """Возвращает актуальный хитбокс в мировых координатах"""
