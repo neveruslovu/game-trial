@@ -39,7 +39,8 @@ class Player:
         self.on_ground = False
         self.facing_right = True
         self.show_hitbox = True
-
+        
+        # Система сбора предметов 
         self.coins = 0
         self.keys = 0
         self.jewels = 0
