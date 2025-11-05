@@ -35,6 +35,9 @@ class RPGPlatformer:
         # ⏰ ДОБАВЛЕНО: Переменная для отслеживания времени игры
         self.game_start_time = 0
         
+        # 🔄 НОВОЕ: Флаг для отслеживания активной игровой сессии
+        self.has_active_game = False
+        
         print("🎮 RPG Platformer инициализирован!")
     
     def start_game(self):
@@ -57,6 +60,9 @@ class RPGPlatformer:
                      
             self.camera = Camera(self.player, (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
             self.hud = HUD(self.player)
+            
+            # 🔄 НОВОЕ: Устанавливаем флаг активной игры
+            self.has_active_game = True
         
             print("✅ Игра запущена!")
         
@@ -64,6 +70,20 @@ class RPGPlatformer:
             print(f"❌ Ошибка при запуске игры: {e}")
             import traceback
             traceback.print_exc()
+    
+    def resume_game(self):
+        """Продолжение существующей игры"""
+        print("🔄 Продолжение игры...")
+        if self.has_active_game and self.player and self.level:
+            self.state = "game"
+            print("✅ Игра восстановлена!")
+        else:
+            print("❌ Нет активной игры для продолжения")
+    
+    def go_to_menu(self):
+        """Переход в меню с сохранением игровой сессии"""
+        print("🏠 Переход в меню...")
+        self.state = "menu"
     
     def handle_events(self):
         for event in pygame.event.get():
@@ -78,7 +98,7 @@ class RPGPlatformer:
                 
                 # Обработка выхода в меню
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    self.state = "menu"
+                    self.go_to_menu()
     
     def update(self):
         dt = self.clock.get_time() / 1000.0  # Delta time в секундах

@@ -3,13 +3,24 @@ import pygame
 class MainMenu:
     def __init__(self, app):
         self.app = app
-        self.options = ["Новая игра", "Загрузить", "Настройки", "Выход"]
         self.selected_index = 0
         self.font = pygame.font.Font(None, 48)
         self.title_font = pygame.font.Font(None, 72)
         
         print("📋 MainMenu initialized")
         print(f"📱 Menu app reference: {self.app}")
+    
+    def get_menu_options(self):
+        """Получение опций меню в зависимости от состояния игры"""
+        if self.app.has_active_game:
+            return ["Продолжить игру", "Новая игра", "Загрузить", "Настройки", "Выход"]
+        else:
+            return ["Новая игра", "Загрузить", "Настройки", "Выход"]
+    
+    @property
+    def options(self):
+        """Получение текущих опций меню"""
+        return self.get_menu_options()
         
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -70,7 +81,10 @@ class MainMenu:
         print(f"🚀 Executing menu action: {option}")
         print(f"📱 App reference in select_option: {self.app}")
         
-        if option == "Новая игра":
+        if option == "Продолжить игру":
+            print("🔄 Continuing existing game...")
+            self.app.resume_game()
+        elif option == "Новая игра":
             print("🎮 Starting new game...")
             self.app.start_game()
         elif option == "Загрузить":
