@@ -35,6 +35,7 @@ def run_all_tests():
         print("❌ Не найдено тестов для запуска")
         return 1
     
+    
     combined_suite = unittest.TestSuite(suites)
     
     print("\n" + "=" * 60)
