@@ -1,5 +1,15 @@
 {
+    "python.defaultInterpreterPath": "./venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "python.analysis.extraPaths": ["./game"],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/.git": true
+    },
+    "editor.formatOnSave": true,
+    "python.formatting.provider": "autopep8",
     "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python-envs.pythonProjects": [],
+    "python-envs.pythonProjects": []
     
 }
