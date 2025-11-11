@@ -1,7 +1,9 @@
 {
     "python.defaultInterpreterPath": "./venv/bin/python",
     "python.terminal.activateEnvironment": true,
-    "python.analysis.extraPaths": ["./game"],
+    "python.analysis.extraPaths": [
+        "./game"
+    ],
     "files.exclude": {
         "**/__pycache__": true,
         "**/*.pyc": true,
@@ -10,6 +12,52 @@
     "editor.formatOnSave": true,
     "python.formatting.provider": "autopep8",
     "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python-envs.pythonProjects": []
-    
+    "python-envs.pythonProjects": [],
+    "better-comments.tags": [
+        {
+            "tag": "!",
+            "color": "#ff0000",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "?",
+            "color": "#0000ff",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "//",
+            "color": "#ee82ee",
+            "strikethrough": true,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "todo",
+            "color": "#ffa500",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "*",
+            "color": "#3cb371",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        }
+    ]
 }
