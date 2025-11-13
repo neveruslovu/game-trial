@@ -249,7 +249,7 @@ class MainMenu:
                 title_text += f" ({self.completed_level_name})"
             title = self.title_font.render(title_text, True, (255, 255, 0))
         else:
-            title = self.title_font.render("RPG PLATFORMER", True, (255, 255, 255))
+            title = self.title_font.render("2D PLATFORMER", True, (255, 255, 255))
 
         screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 100))
 

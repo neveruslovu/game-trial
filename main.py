@@ -16,12 +16,11 @@ from game.assets.audio import AudioManager
 class RPGPlatformer:
     def __init__(self):
         pygame.init()
-
         # Настройки экрана
         self.SCREEN_WIDTH = 1400
         self.SCREEN_HEIGHT = 800
         self.screen = pygame.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
-        pygame.display.set_caption("RPG PLATFORMER")
+        pygame.display.set_caption("2D PLATFORMER")
 
         self.clock = pygame.time.Clock()
         self.running = True
@@ -72,6 +71,15 @@ class RPGPlatformer:
             self.level.set_player(self.player)
             self.camera = Camera(self.player, (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
             self.hud = HUD(self.player)
+            print(f"📷 Камера создана:")
+            print(f"  - Позиция игрока: ({self.player.rect.x}, {self.player.rect.y})")
+            print(
+                f"  - Offset камеры: ({self.camera.offset.x}, {self.camera.offset.y})"
+            )
+            self.camera.update()
+            print(
+                f"  - Offset после update: ({self.camera.offset.x}, {self.camera.offset.y})"
+            )
 
             # Подключаем завершение уровня к МЕНЮ (экран выбора действия после победы)
             def on_level_complete(level_name: str):
@@ -173,6 +181,8 @@ class RPGPlatformer:
         pygame.display.flip()
 
     def run(self):
+        # Сброс первого dt, чтобы избежать гигантского шага физики
+        self.clock.tick(60)
         while self.running:
             self.handle_events()
             self.update()

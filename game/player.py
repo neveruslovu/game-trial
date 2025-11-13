@@ -120,35 +120,48 @@ class Player:
 
         previous_state = self.current_state
 
+        # Определяем новое состояние
         if not self.on_ground:
             self.current_state = "jump"
+        elif previous_state == "jump" and self.on_ground:
+            # Мгновенный переход из прыжка в приземление
+            self.current_state = "land"
         elif moved and not self.is_knockback:
             self.current_state = "run"
         else:
             self.current_state = "idle"
 
+        # Если состояние изменилось — сбрасываем кадр/таймер
         if previous_state != self.current_state:
             self.animation_frame = 0
             self.animation_timer = 0
 
+        # Прогресс таймера анимации
         self.animation_timer += self.animation_speed
 
         if self.current_state == "run":
+            # Бег — циклическая анимация
             if self.animation_timer >= 1:
                 self.animation_frame = (self.animation_frame + 1) % len(
                     self.run_sprites
                 )
                 self.animation_timer = 0
-                self.current_sprite = self.run_sprites[self.animation_frame]
+            self.current_sprite = self.run_sprites[self.animation_frame]
+
         elif self.current_state == "idle":
             self.current_sprite = self.idle_sprite
+
         elif self.current_state == "jump":
             self.current_sprite = self.jump_sprite
 
-        if previous_state == "jump" and self.current_state == "idle":
-            self.current_state = "land"
+        elif self.current_state == "land":
+            # Приземление — показываем спрайт duck на короткое время, затем возвращаемся в idle
             self.current_sprite = self.land_sprite
-            pygame.time.set_timer(pygame.USEREVENT + 1, 300)
+            if self.animation_timer >= 0.2:
+                self.current_state = "idle"
+                self.current_sprite = self.idle_sprite
+                self.animation_frame = 0
+                self.animation_timer = 0
 
     def handle_landing_animation(self):
         """Обрабатывает завершение анимации приземления"""
@@ -371,6 +384,12 @@ class Player:
             damage_taken = self.health_component.take_damage(damage)
 
             if damage_taken:
+                # Звук получения урона
+                try:
+                    AudioManager.get_instance().sfx.play("player_take_damage")
+                except Exception as e:
+                    print(f"[Audio][Player] take_damage sfx failed: {e}")
+
                 self.is_invincible = True
                 self.invincibility_timer = self.invincibility_duration
                 self.apply_knockback(enemy)
@@ -391,6 +410,12 @@ class Player:
 
     def die(self):
         """Обрабатывает смерть игрока"""
+        # Звук смерти
+        try:
+            AudioManager.get_instance().sfx.play("player_death")
+        except Exception as e:
+            print(f"[Audio][Player] death sfx failed: {e}")
+
         self.is_alive = False
         self.respawn_timer = self.respawn_duration
         self.velocity_y = 0
@@ -497,6 +522,12 @@ class Player:
             damage_taken = self.health_component.take_damage(damage)
 
             if damage_taken:
+                # Звук получения урона от ловушки (тот же, что и при ударе врага)
+                try:
+                    AudioManager.get_instance().sfx.play("player_take_damage")
+                except Exception as e:
+                    print(f"[Audio][Player] trap damage sfx failed: {e}")
+
                 self.is_invincible = True
                 self.invincibility_timer = self.invincibility_duration
                 self.velocity_y = -8
