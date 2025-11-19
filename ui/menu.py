@@ -1,4 +1,5 @@
 import pygame
+import os
 
 
 class MainMenu:
@@ -24,6 +25,15 @@ class MainMenu:
         self.selected_index = 0
         self.font = pygame.font.Font(None, 48)
         self.title_font = pygame.font.Font(None, 72)
+
+        # Load background image
+        self.background = self.load_background_image()
+
+        # Menu options for standard mode
+        self.standard_menu_options = ["Новая игра", "Настройки", "Кредиты", "Выход"]
+
+        # Menu options when there's an active game
+        self.active_game_menu_options = ["Продолжить игру", "Новая игра", "Настройки", "Кредиты", "Выход"]
 
         # Флаг и данные для экрана завершения уровня
         self.level_completed_mode = False
@@ -54,9 +64,9 @@ class MainMenu:
         if self.level_completed_mode:
             return ["В МЕНЮ", "ВЫБОР УРОВНЯ", "СЛЕДУЮЩИЙ УРОВЕНЬ"]
         if self.app.has_active_game:
-            return ["Продолжить игру", "Новая игра", "Загрузить", "Настройки", "Выход"]
+            return self.active_game_menu_options
         else:
-            return ["Новая игра", "Загрузить", "Настройки", "Выход"]
+            return self.standard_menu_options
 
     @property
     def options(self):
@@ -98,14 +108,16 @@ class MainMenu:
     def handle_mouse_click(self, mouse_pos):
         """Обработка клика мышью"""
         for i, option in enumerate(self.options):
-            text = self.font.render(option, True, (255, 255, 255))
-            text_rect = text.get_rect(
-                center=(self.app.screen.get_width() // 2, 250 + i * 60)
-            )
+            # Button background rectangle
+            button_width = 300
+            button_height = 50
+            button_x = self.app.screen.get_width() // 2 - button_width // 2
+            button_y = 250 + i * 70
+            button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
-            print(f"🔍 Checking option '{option}' at rect: {text_rect}")
+            print(f"🔍 Checking option '{option}' at rect: {button_rect}")
 
-            if text_rect.collidepoint(mouse_pos):
+            if button_rect.collidepoint(mouse_pos):
                 print(f"🎯 Mouse clicked on: {option}")
                 self.selected_index = i
                 self.play_ui_sound("ui_button_click")
@@ -118,12 +130,14 @@ class MainMenu:
     def handle_mouse_hover(self, mouse_pos):
         """Подсветка при наведении мышью"""
         for i, option in enumerate(self.options):
-            text = self.font.render(option, True, (255, 255, 255))
-            text_rect = text.get_rect(
-                center=(self.app.screen.get_width() // 2, 250 + i * 60)
-            )
+            # Button background rectangle
+            button_width = 300
+            button_height = 50
+            button_x = self.app.screen.get_width() // 2 - button_width // 2
+            button_y = 250 + i * 70
+            button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
-            if text_rect.collidepoint(mouse_pos):
+            if button_rect.collidepoint(mouse_pos):
                 if self.selected_index != i:
                     self.selected_index = i
                     print(f"🖱️ Mouse over: {option}")
@@ -166,12 +180,13 @@ class MainMenu:
         elif option == "Новая игра":
             print("🎮 Starting new game...")
             self.app.start_game()
-        elif option == "Загрузить":
-            print("📂 Load game (not implemented)")
         elif option == "Настройки":
             print("⚙️ Open audio settings menu")
             self.settings_mode = True
             self.settings_selected_index = 0
+        elif option == "Кредиты":
+            print("📝 Show credits")
+            self.app.go_to_credits()
         elif option == "Выход":
             print("👋 Exiting game...")
             self.app.running = False
@@ -252,12 +267,21 @@ class MainMenu:
         pass
 
     def draw(self, screen):
-        screen.fill((30, 30, 60))
+        # Draw the background image if available, otherwise use fallback color
+        if self.background:
+            screen.blit(self.background, (0, 0))
+        else:
+            screen.fill((30, 30, 60))
 
         # Если включен режим настроек аудио — рисуем его отдельно
         if self.settings_mode:
             self.draw_settings(screen)
             return
+
+        # Create a semi-transparent overlay for better text visibility
+        overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 80))  # Semi-transparent black overlay
+        screen.blit(overlay, (0, 0))
 
         # Заголовок
         if self.level_completed_mode:
@@ -266,19 +290,47 @@ class MainMenu:
                 title_text += f" ({self.completed_level_name})"
             title = self.title_font.render(title_text, True, (255, 255, 0))
         else:
-            title = self.title_font.render("2D PLATFORMER", True, (255, 255, 255))
+            title = self.title_font.render("MUSHROOM ADVENTURE", True, (255, 255, 255))
 
         screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 100))
 
         # Опции меню
         for i, option in enumerate(self.options):
+            # Button background rectangle
+            button_width = 300
+            button_height = 50
+            button_x = screen.get_width() // 2 - button_width // 2
+            button_y = 250 + i * 70
+            button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+            # Draw button background with highlight for selected item
+            if i == self.selected_index:
+                pygame.draw.rect(screen, (100, 100, 100, 180), button_rect, border_radius=10)
+                pygame.draw.rect(screen, (255, 255, 255), button_rect, 3, border_radius=10)
+            else:
+                pygame.draw.rect(screen, (50, 50, 50, 180), button_rect, border_radius=10)
+                pygame.draw.rect(screen, (200, 200, 200), button_rect, 2, border_radius=10)
+
+            # Draw text
             color = (255, 255, 0) if i == self.selected_index else (255, 255, 255)
             text = self.font.render(option, True, color)
-            text_rect = text.get_rect(center=(screen.get_width() // 2, 250 + i * 60))
+            text_rect = text.get_rect(center=button_rect.center)
             screen.blit(text, text_rect)
 
-            debug_rect = text_rect.inflate(20, 10)
-            pygame.draw.rect(screen, (255, 0, 0), debug_rect, 1)
+    def load_background_image(self):
+        """Загрузка фонового изображения для меню."""
+        try:
+            # Get the path to the background image
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            background_path = os.path.join(base_path, "game", "assets", "Backgrounds", "colored_shroom.png")
+
+            # Load and scale the image to fit the screen
+            background = pygame.image.load(background_path).convert()
+            background = pygame.transform.scale(background, (self.app.SCREEN_WIDTH, self.app.SCREEN_HEIGHT))
+            return background
+        except Exception as e:
+            print(f"[Menu] WARNING: Could not load background image: {e}")
+            return None
 
     def play_ui_sound(self, key: str):
         """Воспроизведение UI-звуков через глобальный AudioManager."""
@@ -299,8 +351,9 @@ class MainMenu:
         # Проверяем каждый слайдер
         for i, opt in enumerate(self.settings_options):
             if opt in ["Громкость MASTER", "Громкость MUSIC", "Громкость SFX"]:
-                slider_y = base_y + i * 60 + 25
-                slider_rect = pygame.Rect(slider_x, slider_y, self.slider_width, self.slider_height)
+                slider_y = base_y + i * 80 + 35  # Увеличили отступ между элементами
+                # Увеличиваем область взаимодействия для удобства
+                slider_rect = pygame.Rect(slider_x - 10, slider_y - 10, self.slider_width + 20, self.slider_height + 20)
 
                 if slider_rect.collidepoint(mouse_pos):
                     # Определяем, какой слайдер перетаскиваем
@@ -330,10 +383,14 @@ class MainMenu:
 
             # Обработка клика на другие опции (Mute/Unmute и Назад)
             elif opt in ["Mute / Unmute", "Назад"]:
-                text = self.font.render(opt, True, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.app.screen.get_width() // 2, base_y + i * 60))
+                # Используем тот же размер кнопок, что и в отрисовке
+                button_width = 300
+                button_height = 50
+                button_x = self.app.screen.get_width() // 2 - button_width // 2
+                button_y = base_y + i * 60 - 25
+                button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
-                if text_rect.collidepoint(mouse_pos):
+                if button_rect.collidepoint(mouse_pos):
                     if opt == "Mute / Unmute":
                         audio.toggle_mute()
                     else:  # Назад
@@ -356,21 +413,40 @@ class MainMenu:
             # Просто подсвечиваем опцию при наведении
             base_y = 220
             for i, opt in enumerate(self.settings_options):
-                text = self.font.render(opt, True, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.app.screen.get_width() // 2, base_y + i * 60))
+                # Для слайдеров используем увеличенную область взаимодействия
+                if opt in ["Громкость MASTER", "Громкость MUSIC", "Громкость SFX"]:
+                    slider_x = self.app.screen.get_width() // 2 - self.slider_width // 2
+                    slider_y = base_y + i * 60 + 25
+                    # Увеличиваем область взаимодействия для удобства
+                    slider_rect = pygame.Rect(slider_x - 10, slider_y - 10, self.slider_width + 20, self.slider_height + 20)
 
-                if text_rect.collidepoint(mouse_pos):
-                    if self.settings_selected_index != i:
-                        self.settings_selected_index = i
-                        # Воспроизводим звук при наведении на новую опцию
-                        self.play_ui_sound("ui_menu_move")
-                    return
+                    if slider_rect.collidepoint(mouse_pos):
+                        if self.settings_selected_index != i:
+                            self.settings_selected_index = i
+                            # Воспроизводим звук при наведении на новую опцию
+                            self.play_ui_sound("ui_menu_move")
+                        return
+                else:
+                    # Для кнопок используем тот же размер, что и в отрисовке
+                    button_width = 300
+                    button_height = 50
+                    button_x = self.app.screen.get_width() // 2 - button_width // 2
+                    button_y = base_y + i * 60 - 25
+                    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+                    if button_rect.collidepoint(mouse_pos):
+                        if self.settings_selected_index != i:
+                            self.settings_selected_index = i
+                            # Воспроизводим звук при наведении на новую опцию
+                            self.play_ui_sound("ui_menu_move")
+                        return
             return
 
         # Обработка перетаскивания слайдера
         slider_x = self.app.screen.get_width() // 2 - self.slider_width // 2
 
         # Вычисляем новое значение громкости на основе позиции мыши
+        # Добавляем небольшой зазор для более точного управления
         relative_x = mouse_pos[0] - slider_x
         new_volume = max(0.0, min(1.0, relative_x / self.slider_width))
 
@@ -391,7 +467,17 @@ class MainMenu:
 
     def draw_settings(self, screen):
         """Отрисовка простого меню аудио-настроек."""
-        screen.fill((20, 20, 40))
+        # Draw the background image if available, otherwise use fallback color
+        if self.background:
+            screen.blit(self.background, (0, 0))
+        else:
+            screen.fill((20, 20, 40))
+
+        # Create a semi-transparent overlay for better text visibility
+        overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 80))  # Semi-transparent black overlay
+        screen.blit(overlay, (0, 0))
+
         title = self.title_font.render("НАСТРОЙКИ ЗВУКА", True, (255, 255, 255))
         screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 80))
 
@@ -404,7 +490,7 @@ class MainMenu:
             )
             return
 
-        base_y = 220
+        base_y = 220  # Возвращаем стандартное значение
         slider_x = screen.get_width() // 2 - self.slider_width // 2
 
         for i, opt in enumerate(self.settings_options):
@@ -429,15 +515,26 @@ class MainMenu:
 
                 # Рисуем слайдер
                 slider_y = base_y + i * 60 + 25
-                # Фон слайдера
-                pygame.draw.rect(screen, (100, 100, 100), (slider_x, slider_y, self.slider_width, self.slider_height))
-                # Заполненная часть слайдера
+                # Фон слайдера с закругленными углами
+                pygame.draw.rect(screen, (50, 50, 50, 180), (slider_x, slider_y, self.slider_width, self.slider_height), border_radius=5)
+                # Заполненная часть слайдера с градиентным эффектом
                 fill_width = int(self.slider_width * volume_value)
-                pygame.draw.rect(screen, (200, 200, 200), (slider_x, slider_y, fill_width, self.slider_height))
-                # Ручка слайдера
+                # Создаем градиентный эффект для слайдера
+                for j in range(fill_width):
+                    color_value = 100 + int(155 * (j / self.slider_width))
+                    pygame.draw.line(screen, (color_value, color_value, 255), 
+                                    (slider_x + j, slider_y), 
+                                    (slider_x + j, slider_y + self.slider_height))
+                # Ручка слайдера с эффектом свечения
                 handle_x = slider_x + fill_width
-                handle_rect = pygame.Rect(handle_x - 5, slider_y - 5, 10, self.slider_height + 10)
-                pygame.draw.rect(screen, (255, 255, 255), handle_rect)
+                handle_rect = pygame.Rect(handle_x - 8, slider_y - 8, 16, self.slider_height + 16)
+                # Тень для ручки
+                pygame.draw.circle(screen, (0, 0, 0, 100), (handle_x + 2, slider_y + self.slider_height // 2 + 2), 10)
+                # Свечение вокруг ручки
+                pygame.draw.circle(screen, (150, 150, 255), (handle_x, slider_y + self.slider_height // 2), 12)
+                pygame.draw.circle(screen, (200, 200, 255), (handle_x, slider_y + self.slider_height // 2), 8)
+                # Основная ручка (увеличена для лучшей видимости)
+                pygame.draw.circle(screen, (255, 255, 255), (handle_x, slider_y + self.slider_height // 2), 6)
 
                 # Подсветка при выборе
                 if is_selected:
@@ -448,19 +545,25 @@ class MainMenu:
                         2,
                     )
             else:
-                # Для других опций рисуем только текст
+                # Для других опций рисуем кнопки как в главном меню
+                button_width = 300
+                button_height = 50
+                button_x = screen.get_width() // 2 - button_width // 2
+                button_y = base_y + i * 60 - 25
+                button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+                # Draw button background with highlight for selected item
+                if is_selected:
+                    pygame.draw.rect(screen, (100, 100, 100, 180), button_rect, border_radius=10)
+                    pygame.draw.rect(screen, (255, 255, 255), button_rect, 3, border_radius=10)
+                else:
+                    pygame.draw.rect(screen, (50, 50, 50, 180), button_rect, border_radius=10)
+                    pygame.draw.rect(screen, (200, 200, 200), button_rect, 2, border_radius=10)
+
+                # Draw text
                 label = opt
                 if opt == "Mute / Unmute":
                     label = f"{opt}: {'ON' if audio.settings.muted else 'OFF'}"
                 text = self.font.render(label, True, color)
-                text_rect = text.get_rect(center=(screen.get_width() // 2, base_y + i * 60))
+                text_rect = text.get_rect(center=button_rect.center)
                 screen.blit(text, text_rect)
-
-                # Подсветка при выборе
-                if is_selected:
-                    pygame.draw.rect(
-                        screen,
-                        (255, 255, 0),
-                        text_rect.inflate(20, 10),
-                        2,
-                    )

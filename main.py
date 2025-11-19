@@ -10,6 +10,7 @@ from game.camera import Camera
 from game.levels.level1 import Level
 from ui.menu import MainMenu
 from ui.hud import HUD
+from ui.credits import Credits
 from game.assets.audio import AudioManager
 from game.config import load_config
 
@@ -31,7 +32,7 @@ class RPGPlatformer:
 
         self.clock = pygame.time.Clock()
         self.running = True
-        self.state = "menu"  # menu, game, settings
+        self.state = "menu"  # menu, game, settings, credits
 
         # Инициализация систем
         # Аудиосистема (глобальный синглтон, базовый путь укажем на каталог audio)
@@ -46,6 +47,7 @@ class RPGPlatformer:
         self.audio.apply_volumes()
 
         self.menu = MainMenu(self)
+        self.credits = Credits(self)
         self.player = None
         self.level = None
         self.camera = None
@@ -124,6 +126,11 @@ class RPGPlatformer:
         print("🏠 Переход в меню...")
         self.state = "menu"
 
+    def go_to_credits(self):
+        """Переход к экрану с кредитами"""
+        print("📝 Переход к кредитам...")
+        self.state = "credits"
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -135,6 +142,11 @@ class RPGPlatformer:
             # Состояние: меню
             if self.state == "menu":
                 self.menu.handle_event(event)
+                continue
+
+            # Состояние: кредиты
+            if self.state == "credits":
+                self.credits.handle_event(event)
                 continue
 
             # Состояние: игра
@@ -179,6 +191,8 @@ class RPGPlatformer:
         # Отрисовка в зависимости от состояния
         if self.state == "menu":
             self.menu.draw(self.screen)
+        elif self.state == "credits":
+            self.credits.draw(self.screen)
         elif self.state == "game":
             # Отрисовка игры
             self.level.draw(self.screen, self.camera)
