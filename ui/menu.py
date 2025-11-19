@@ -414,7 +414,6 @@ class MainMenu:
             # Просто подсвечиваем опцию при наведении
             base_y = 180
             for i, opt in enumerate(self.settings_options):
-<<<<<<< HEAD
                 # Для слайдеров используем увеличенную область взаимодействия
                 if opt in ["Громкость MASTER", "Громкость MUSIC", "Громкость SFX"]:
                     slider_x = self.app.screen.get_width() // 2 - self.slider_width // 2
@@ -492,11 +491,7 @@ class MainMenu:
             )
             return
 
-<<<<<<< HEAD
-        base_y = 220  # Возвращаем стандартное значение
-=======
         base_y = 180
->>>>>>> origin/fix/settings-volume-master-music-sfx-not-updating-ui-mixers-overlap-large-padding
         slider_x = screen.get_width() // 2 - self.slider_width // 2
 
         for i, opt in enumerate(self.settings_options):
@@ -521,31 +516,6 @@ class MainMenu:
                 screen.blit(text, text_rect)
 
                 # Рисуем слайдер
-<<<<<<< HEAD
-                slider_y = base_y + i * 60 + 25
-                # Фон слайдера с закругленными углами
-                pygame.draw.rect(screen, (50, 50, 50, 180), (slider_x, slider_y, self.slider_width, self.slider_height), border_radius=5)
-                # Заполненная часть слайдера с градиентным эффектом
-                fill_width = int(self.slider_width * volume_value)
-                # Создаем градиентный эффект для слайдера
-                for j in range(fill_width):
-                    color_value = 100 + int(155 * (j / self.slider_width))
-                    pygame.draw.line(screen, (color_value, color_value, 255), 
-                                    (slider_x + j, slider_y), 
-                                    (slider_x + j, slider_y + self.slider_height))
-                # Ручка слайдера с эффектом свечения
-                handle_x = slider_x + fill_width
-                handle_rect = pygame.Rect(handle_x - 8, slider_y - 8, 16, self.slider_height + 16)
-                # Тень для ручки
-                pygame.draw.circle(screen, (0, 0, 0, 100), (handle_x + 2, slider_y + self.slider_height // 2 + 2), 10)
-                # Свечение вокруг ручки
-                pygame.draw.circle(screen, (150, 150, 255), (handle_x, slider_y + self.slider_height // 2), 12)
-                pygame.draw.circle(screen, (200, 200, 255), (handle_x, slider_y + self.slider_height // 2), 8)
-                # Основная ручка (увеличена для лучшей видимости)
-                pygame.draw.circle(screen, (255, 255, 255), (handle_x, slider_y + self.slider_height // 2), 6)
-
-                # Подсветка при выборе
-=======
                 slider_y = base_y + i * self.option_spacing + 35
                 
                 # Тень слайдера
@@ -582,7 +552,6 @@ class MainMenu:
                 pygame.draw.rect(screen, (240, 240, 240), handle_rect, border_radius=handle_size // 2)
                 
                 # Обводка ручки
->>>>>>> origin/fix/settings-volume-master-music-sfx-not-updating-ui-mixers-overlap-large-padding
                 if is_selected:
                     pygame.draw.rect(screen, (255, 255, 0), handle_rect, 3, border_radius=handle_size // 2)
                 else:
@@ -614,10 +583,6 @@ class MainMenu:
                 if opt == "Mute / Unmute":
                     label = f"{opt}: {'ON' if audio.settings.muted else 'OFF'}"
                 text = self.font.render(label, True, color)
-<<<<<<< HEAD
-                text_rect = text.get_rect(center=button_rect.center)
-                screen.blit(text, text_rect)
-=======
                 text_rect = text.get_rect(center=(screen.get_width() // 2, base_y + i * self.option_spacing))
                 screen.blit(text, text_rect)
 
@@ -630,4 +595,3 @@ class MainMenu:
                         2,
                         border_radius=5,
                     )
->>>>>>> origin/fix/settings-volume-master-music-sfx-not-updating-ui-mixers-overlap-large-padding
