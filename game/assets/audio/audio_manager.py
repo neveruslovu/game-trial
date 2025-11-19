@@ -44,7 +44,8 @@ class AudioManager:
         self.base_path = base_path or module_dir
 
         # Settings
-        self.settings = AudioSettings()
+        # Загружаем сохранённые значения, если файл настроек уже существует
+        self.settings = AudioSettings.load()
 
         # Initialize pygame.mixer safely
         self._init_mixer()
@@ -55,6 +56,9 @@ class AudioManager:
 
         # Load core assets (lazy where possible, but we can preload essentials)
         self._register_default_assets()
+
+        # Применяем уровни громкости к микшеру сразу после инициализации
+        self.apply_volumes()
 
     # ---------- Initialization ----------
 
@@ -172,6 +176,15 @@ class AudioManager:
 
         effective_music = self.settings.get_effective_music_volume()
         effective_sfx = self.settings.get_effective_sfx_volume()
+
+        print(
+            "[Audio] apply_volumes: "
+            f"master={self.settings.master_volume:.2f} "
+            f"music={self.settings.music_volume:.2f} "
+            f"sfx={self.settings.sfx_volume:.2f} "
+            f"muted={self.settings.muted} -> "
+            f"eff_music={effective_music:.2f} eff_sfx={effective_sfx:.2f}"
+        )
 
         # Music volume (pygame.mixer.music is global)
         self.music.apply_volume(effective_music)

@@ -179,5 +179,16 @@ class SFXManager:
             except Exception as e:
                 print(f"[SFX] WARNING: Failed to set volume for '{key}': {e}")
 
+        # Также обновляем громкость для уже играющих каналов, чтобы
+        # изменения ползунка SFX были слышны сразу, а не только для
+        # новых звуков.
+        try:
+            num_channels = pygame.mixer.get_num_channels()
+            for i in range(num_channels):
+                channel = pygame.mixer.Channel(i)
+                channel.set_volume(self._last_set_volume)
+        except Exception as e:
+            print(f"[SFX] WARNING: Failed to set volume on channels: {e}")
+
 
 __all__ = ["SFXManager"]
