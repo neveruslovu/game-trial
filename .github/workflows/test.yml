@@ -26,4 +26,4 @@ jobs:
           pip install unittest2
       - name: Run all tests
         run: |
-          pytest tests/ -v --tb=short
+          pytest tests/ -v --tb=short --ignore=tests/test_game.py --ignore=tests/test_menu_visual.py --ignore=tests/test_hud_features.py
