@@ -9,7 +9,22 @@ class Slime(pygame.sprite.Sprite):
 
         # 🎨 ЗАГРУЗКА 4 СПРАЙТОВ СЛАЙМА
         self.load_sprites()
+
+        # 🔥 FIX: Ensure current_sprite is NEVER None
+        if not hasattr(self, "current_sprite") or self.current_sprite is None:
+            print("⚠️ Creating placeholder sprites for slime")
+            self.create_placeholder_sprites()
+
         self.current_sprite = self.idle_sprite
+
+        # 🔥 FIX: CRITICAL - Set image IMMEDIATELY before any other initialization
+        # This ensures the sprite is visible from frame 1
+        self.image = self.current_sprite
+        if self.image is None:
+            print("❌ CRITICAL: Slime image is None after load_sprites!")
+            self.create_placeholder_sprites()
+            self.current_sprite = self.idle_sprite
+            self.image = self.current_sprite
 
         # Анимационные переменные
         self.current_state = "idle"  # idle, move, hurt, dead
@@ -94,6 +109,8 @@ class Slime(pygame.sprite.Sprite):
             print(f"❌ Ошибка загрузки спрайтов слайма: {e}")
             # Заглушки если спрайты не загрузились
             self.create_placeholder_sprites()
+
+        # 🔥 FIX: Ensure current_sprite is always set
         self.current_sprite = self.idle_sprite if hasattr(self, "idle_sprite") else None
         if self.current_sprite is None:
             print("⚠️ ВНИМАНИЕ: current_sprite is None после загрузки!")

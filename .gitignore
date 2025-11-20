@@ -132,3 +132,7 @@ coverage-html/
 /tests/**/cache/
 /tests/**/tmp/
 /tests/**/temp/
+
+
+# ChromaDB vector database data
+chroma_data/

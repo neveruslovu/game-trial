@@ -258,20 +258,44 @@ class Player:
 
                 # 🔥 УЛУЧШЕННОЕ ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЯ
                 if self.velocity_x > 0 or (self.rect.x > self.old_x):  # Движение вправо
-                    # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
-                    self.rect.right = platform_left + self.hitbox.x
-                    self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
-                    # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
-                    self.blocked_right = True
+                    # Check for step-up (allow climbing small obstacles like slope tops)
+                    step_height = 16  # Max pixels to step up
+                    if (
+                        self.on_ground
+                        and self.rect.bottom > platform.rect.top
+                        and (self.rect.bottom - platform.rect.top) <= step_height
+                    ):
+                        self.rect.bottom = platform.rect.top
+                        # Don't stop horizontal movement
+                    else:
+                        # 🔥 Блокируем движение только если реально упираемся боком в платформу
+                        if self.rect.bottom > platform.rect.top:
+                            # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
+                            self.rect.right = platform_left + self.hitbox.x
+                            self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
+                            # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
+                            self.blocked_right = True
 
                 elif self.velocity_x < 0 or (
                     self.rect.x < self.old_x
                 ):  # Движение влево
-                    # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
-                    self.rect.left = platform_right - self.hitbox.x
-                    self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
-                    # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
-                    self.blocked_left = True
+                    # Check for step-up (allow climbing small obstacles like slope tops)
+                    step_height = 16  # Max pixels to step up
+                    if (
+                        self.on_ground
+                        and self.rect.bottom > platform.rect.top
+                        and (self.rect.bottom - platform.rect.top) <= step_height
+                    ):
+                        self.rect.bottom = platform.rect.top
+                        # Don't stop horizontal movement
+                    else:
+                        # 🔥 Блокируем движение только если реально упираемся боком в платформу
+                        if self.rect.bottom > platform.rect.top:
+                            # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
+                            self.rect.left = platform_right - self.hitbox.x
+                            self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
+                            # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
+                            self.blocked_left = True
                 break
 
     def handle_vertical_collisions(self, platforms):
@@ -311,28 +335,53 @@ class Player:
                 break
 
     def handle_triangle_collision(self, triangle):
-        """Обрабатывает столкновение с треугольной платформой"""
+        """Обрабатывает столкновение с треугольной платформой (правый треугольник, подъём слева направо)"""
         player_hitbox = self.get_actual_hitbox()
 
-        # Определяем, на какой части треугольника находится игрок
+        # Горизонтальная проекция игрока должна быть над треугольником
         player_center_x = player_hitbox.centerx
         triangle_left = triangle.rect.left
         triangle_right = triangle.rect.right
-        triangle_top = triangle.rect.top
         triangle_bottom = triangle.rect.bottom
 
-        if not (triangle_left <= player_hitbox.centerx <= triangle_right):
+        # 🔥 FIX: Stricter bounds checking - reduce tolerance for edge detection
+        if player_center_x < triangle_left - 5 or player_center_x > triangle_right + 5:
             return
-        # Вычисляем относительную позицию игрока на треугольнике (0 до 1)
-        relative_x = (player_center_x - triangle_left) / triangle.rect.width
 
-        # Треугольник: правый верхний → правый нижний → левый нижний
-        # Вычисляем максимальную высоту на этой X позиции
-        max_y = triangle_bottom - triangle.rect.height * relative_x
+        # Нормализованная позиция по X (0.0 - левая точка, 1.0 - правая)
+        triangle_width = triangle.rect.width
+        triangle_height = triangle.rect.height
 
-        # Если игрок ниже допустимой высоты, размещаем его на поверхности
-        if player_hitbox.bottom > max_y and self.velocity_y >= 0:
-            self.rect.bottom = max_y
+        # Use center_x but clamp it to triangle bounds for calculation
+        clamped_x = max(triangle_left, min(triangle_right, player_center_x))
+        relative_x = (clamped_x - triangle_left) / triangle_width
+        relative_x = max(0.0, min(1.0, relative_x))
+
+        # Для тайла 'triangle' наклон поднимается слева направо:
+        #   при x = left  → высота = 0   (у самого низа)
+        #   при x = right → высота = H   (у самого верха)
+        # ⇒ высота поверхности над нижней точкой:
+        slope_height = relative_x * triangle_height
+        surface_y = triangle_bottom - slope_height
+
+        player_bottom = player_hitbox.bottom
+
+        # 🔥 FIX: Adaptive tolerance at slope peak for smooth transition
+        if relative_x > 0.85:
+            tolerance = 15  # Larger tolerance at peak
+        else:
+            tolerance = 5
+
+        # 🔥 FIX: Only apply collision when falling (not jumping up)
+        if player_bottom > surface_y - tolerance and self.velocity_y >= 0:
+            # Don't snap if player is jumping high above the slope
+            if player_bottom - surface_y > 30:
+                return
+
+            correction = player_bottom - surface_y
+            # Сдвигаем прямоугольник игрока так, чтобы дно хитбокса легло на склон
+            self.rect.y -= correction
+
             self.on_ground = True
             self.is_jumping = False
             self.velocity_y = 0

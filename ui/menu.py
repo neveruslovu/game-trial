@@ -84,6 +84,38 @@ class MainMenu:
         """Получение текущих опций меню"""
         return self.get_menu_options()
 
+    def _get_main_menu_layout(self, screen):
+        """Возвращает параметры раскладки кнопок главного/финального меню.
+
+        Подбирает базовую Y-координату так, чтобы все кнопки гарантированно
+        помещались по вертикали при разных размерах окна.
+        """
+        # Подбираем ширину кнопки с учётом самой длинной надписи
+        if self.options:
+            max_text_width = max(self.font.size(opt)[0] for opt in self.options)
+        else:
+            max_text_width = 0
+
+        # Базовая ширина 300px, но не меньше ширины текста + отступы
+        button_width = max(300, max_text_width + 80)
+        # Не даём кнопке выходить за края экрана
+        button_width = min(button_width, screen.get_width() - 80)
+        button_height = 50
+        spacing = 70
+
+        # Общая высота блока меню (от верхней до нижней кнопки)
+        menu_height = (
+            len(self.options) * button_height + (len(self.options) - 1) * spacing
+        )
+
+        # Минимальный отступ сверху, чтобы заголовок не налезал на кнопки
+        top_margin = 180
+
+        # Центрируем блок меню по доступной высоте, но не опускаем его выше top_margin
+        base_y = max(top_margin, (screen.get_height() - menu_height) // 2)
+
+        return button_width, button_height, base_y, spacing
+
     def handle_event(self, event):
         # Режим настроек аудио обрабатывается отдельно
         if self.settings_mode:
@@ -118,12 +150,15 @@ class MainMenu:
 
     def handle_mouse_click(self, mouse_pos):
         """Обработка клика мышью"""
+        screen = self.app.screen
+        button_width, button_height, base_y, spacing = self._get_main_menu_layout(
+            screen
+        )
+
         for i, option in enumerate(self.options):
             # Button background rectangle
-            button_width = 300
-            button_height = 50
-            button_x = self.app.screen.get_width() // 2 - button_width // 2
-            button_y = 250 + i * 70
+            button_x = screen.get_width() // 2 - button_width // 2
+            button_y = base_y + i * spacing
             button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
             print(f"🔍 Checking option '{option}' at rect: {button_rect}")
@@ -140,12 +175,15 @@ class MainMenu:
 
     def handle_mouse_hover(self, mouse_pos):
         """Подсветка при наведении мышью"""
+        screen = self.app.screen
+        button_width, button_height, base_y, spacing = self._get_main_menu_layout(
+            screen
+        )
+
         for i, option in enumerate(self.options):
             # Button background rectangle
-            button_width = 300
-            button_height = 50
-            button_x = self.app.screen.get_width() // 2 - button_width // 2
-            button_y = 250 + i * 70
+            button_x = screen.get_width() // 2 - button_width // 2
+            button_y = base_y + i * spacing
             button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
             if button_rect.collidepoint(mouse_pos):
@@ -332,12 +370,14 @@ class MainMenu:
         screen.blit(title, (screen.get_width() // 2 - title.get_width() // 2, 100))
 
         # Опции меню
+        button_width, button_height, base_y, spacing = self._get_main_menu_layout(
+            screen
+        )
+
         for i, option in enumerate(self.options):
             # Button background rectangle
-            button_width = 300
-            button_height = 50
             button_x = screen.get_width() // 2 - button_width // 2
-            button_y = 250 + i * 70
+            button_y = base_y + i * spacing
             button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
 
             # Draw button background with highlight for selected item

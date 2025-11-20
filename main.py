@@ -104,6 +104,9 @@ class RPGPlatformer:
             # 🔄 Флаг активной игры
             self.has_active_game = True
 
+            # Reset clock to avoid huge dt on first frame after loading
+            self.clock.tick()
+
             print("✅ Игра запущена!")
 
         except Exception as e:
@@ -160,6 +163,8 @@ class RPGPlatformer:
 
     def update(self):
         dt = self.clock.get_time() / 1000.0  # Delta time в секундах
+        # Cap dt to prevent tunneling on lag spikes (e.g. asset loading)
+        dt = min(dt, 0.1)
 
         # Обновление в зависимости от состояния
         if self.state == "game" and self.player and self.level:

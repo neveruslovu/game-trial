@@ -116,9 +116,22 @@ class Level:
                     enemy.direction = 1
                     enemy.facing_right = False
 
+                # 🔥 FIX: Force image refresh and validate
+                if (
+                    hasattr(enemy, "current_sprite")
+                    and enemy.current_sprite is not None
+                ):
+                    enemy.image = enemy.current_sprite
+
                 # Убедимся что у врага есть изображение
                 if not hasattr(enemy, "image") or enemy.image is None:
-                    print(f"⚠️ У врага {enemy.__class__.__name__} нет изображения!")
+                    print(
+                        f"⚠️ У врага {enemy.__class__.__name__} нет изображения! Создаём placeholder..."
+                    )
+                    if hasattr(enemy, "create_placeholder_sprites"):
+                        enemy.create_placeholder_sprites()
+                        enemy.current_sprite = enemy.idle_sprite
+                        enemy.image = enemy.current_sprite
 
             # Обновим анимации после сброса
             for enemy in self.enemies:
@@ -285,7 +298,12 @@ class Level:
                 print(f"🔄 Попытка создания врага {enemy_type} на позиции ({x}, {y})")
                 if enemy_type == "slime":
                     enemy = Slime(x, y)
-                    print(f"✅ Slime создан успешно: {enemy}")
+                    # 🔥 FIX: Validate image is set
+                    if enemy.image is None:
+                        print(f"❌ Slime создан но image is None! Исправляем...")
+                        enemy.create_placeholder_sprites()
+                        enemy.image = enemy.idle_sprite
+                    print(f"✅ Slime создан успешно с image: {enemy.image}")
                 elif enemy_type == "snail":
                     enemy = Snail(x, y)
                     print(f"✅ Snail создан успешно: {enemy}")
@@ -298,8 +316,16 @@ class Level:
                     print(f"✅ Saw добавлен в ловушки")
                     continue  # Skip adding to enemies group
 
-                # ВАЖНО: добавляем только если объект реально создан
+                # 🔥 FIX: Double-check image before adding to group
                 if enemy is not None:
+                    if not hasattr(enemy, "image") or enemy.image is None:
+                        print(f"⚠️ {enemy_type} missing image before add, fixing...")
+                        if hasattr(enemy, "idle_sprite"):
+                            enemy.image = enemy.idle_sprite
+                        elif hasattr(enemy, "create_placeholder_sprites"):
+                            enemy.create_placeholder_sprites()
+                            enemy.image = enemy.idle_sprite
+
                     self.enemies.add(enemy)
                     print(
                         f"✅ Враг {enemy_type} добавлен в группу врагов. Всего врагов: {len(self.enemies)}"
