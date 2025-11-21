@@ -90,6 +90,9 @@ class Player:
         # Callback, который может быть установлен уровнем для обработки удара по ящику
         self.on_box_hit = None
 
+        # Callback, который может быть установлен уровнем для обработки респавна игрока
+        self.on_respawn = None
+
         self.health_component = self.HealthComponent(60)
         print(f"🎯 Player created at position: ({x}, {y})")
 
@@ -571,6 +574,13 @@ class Player:
         self.invincibility_timer = 3.0
         self.current_state = "idle"
         self.current_sprite = self.idle_sprite
+
+        # Вызываем callback респавна, если он установлен (для возрождения врагов и т.д.)
+        if callable(self.on_respawn):
+            try:
+                self.on_respawn()
+            except Exception as e:
+                print(f"[Player] on_respawn callback failed: {e}")
 
     def check_collision_with_enemy(self, enemy):
         """Проверка коллизии с врагом"""

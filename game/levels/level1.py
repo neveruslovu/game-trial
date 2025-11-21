@@ -45,6 +45,9 @@ class Level:
         self.width = 30 * 128  # 3840
         self.height = 20 * 128  # 2560
 
+        # 🔄 НОВОЕ: Хранение начальных данных врагов для респавна
+        self.initial_enemy_data = []
+
         # 🔥 ЗАГРУЗКА TILESETS - ОБНОВЛЕННЫЕ ПУТИ
         self.load_tilesets()
         self.load_from_xml()
@@ -79,6 +82,10 @@ class Level:
             # Callback для удара игроком по ящику box (спавн монеты)
             if hasattr(self.player, "on_box_hit"):
                 self.player.on_box_hit = self.spawn_coin_from_box
+
+            # Callback для респавна игрока (возрождение врагов)
+            if hasattr(self.player, "on_respawn"):
+                self.player.on_respawn = self.respawn_killed_enemies
 
             # Жёсткий сброс состояния всех врагов при каждом New Game
             for enemy in self.enemies:
@@ -358,6 +365,9 @@ class Level:
             (2308, 1648 - 128, 128, 128, "fly"),
         ]
 
+        # 🔄 НОВОЕ: Сохраняем начальные данные врагов для респавна после смерти игрока
+        self.initial_enemy_data = enemies_data
+
         # При каждом создании уровня гарантированно создаём НОВЫЕ инстансы врагов.
         # Это важно: если где-то старый Level не был очищен, мы не переиспользуем "улетевших" врагов.
         self.enemies.empty()
@@ -453,6 +463,67 @@ class Level:
         print(
             f"✅ Objects loaded: {len(self.enemies)} врагов, {len(self.items)} предметов, {len(self.decorations)} декораций"
         )
+
+    def respawn_killed_enemies(self):
+        """Возрождает всех убитых врагов при респавне игрока"""
+        print("🔄 Проверка убитых врагов для респавна...")
+        
+        # Подсчитываем текущих живых врагов по типам
+        alive_enemy_count = {}
+        for enemy in self.enemies.sprites():
+            enemy_type = enemy.__class__.__name__.lower()
+            alive_enemy_count[enemy_type] = alive_enemy_count.get(enemy_type, 0) + 1
+        
+        # Подсчитываем начальное количество врагов по типам
+        initial_enemy_count = {}
+        for x, y, w, h, enemy_type in self.initial_enemy_data:
+            if enemy_type == "saw":  # Пропускаем saw - они не враги, а ловушки
+                continue
+            initial_enemy_count[enemy_type] = initial_enemy_count.get(enemy_type, 0) + 1
+        
+        # Возрождаем недостающих врагов
+        for x, y, w, h, enemy_type in self.initial_enemy_data:
+            # Пропускаем saw - они не враги, а ловушки
+            if enemy_type == "saw":
+                continue
+            
+            # Проверяем, нужно ли возродить врага этого типа
+            current_count = alive_enemy_count.get(enemy_type, 0)
+            initial_count = initial_enemy_count.get(enemy_type, 0)
+            
+            if current_count < initial_count:
+                # Есть убитые враги этого типа, возрождаем одного
+                enemy = None
+                try:
+                    print(f"🔄 Возрождение врага {enemy_type} на позиции ({x}, {y})")
+                    if enemy_type == "slime":
+                        enemy = Slime(x, y)
+                        if enemy.image is None:
+                            enemy.create_placeholder_sprites()
+                            enemy.image = enemy.idle_sprite
+                    elif enemy_type == "snail":
+                        enemy = Snail(x, y)
+                    elif enemy_type == "fly":
+                        enemy = Fly(x, y)
+                    
+                    if enemy is not None:
+                        if not hasattr(enemy, "image") or enemy.image is None:
+                            if hasattr(enemy, "idle_sprite"):
+                                enemy.image = enemy.idle_sprite
+                            elif hasattr(enemy, "create_placeholder_sprites"):
+                                enemy.create_placeholder_sprites()
+                                enemy.image = enemy.idle_sprite
+                        
+                        self.enemies.add(enemy)
+                        # Обновляем счетчик чтобы не создавать дубликаты
+                        alive_enemy_count[enemy_type] = alive_enemy_count.get(enemy_type, 0) + 1
+                        print(f"✅ Враг {enemy_type} возрожден успешно")
+                except Exception as e:
+                    print(f"❌ Ошибка возрождения врага {enemy_type}: {e}")
+                    import traceback
+                    traceback.print_exc()
+        
+        print(f"✅ Респавн врагов завершен. Всего врагов: {len(self.enemies)}")
 
     def check_exit_door_collision(self):
         """

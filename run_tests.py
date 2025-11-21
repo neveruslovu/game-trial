@@ -17,7 +17,8 @@ def run_all_tests():
     test_files = [
         'test_imports',
         'test_units', 
-        'test_integration'
+        'test_integration',
+        'test_enemy_respawn'
     ]
     
     loader = unittest.TestLoader()
