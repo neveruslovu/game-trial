@@ -84,6 +84,29 @@ class TestPlayer(unittest.TestCase):
         self.player.handle_keys(keys, platforms)
         self.assertTrue(self.player.facing_right)
 
+    def test_player_transitions_between_slope_tiles(self):
+        """Игрок не должен упираться в стык двух наклонных тайлов"""
+        slope_left = Platform(0, 400, 128, 128, "triangle")
+        slope_right = Platform(128, 400, 128, 128, "triangle")
+        platforms = [slope_left, slope_right]
+
+        # Размещаем игрока почти у верхушки левого склона
+        target_relative_x = 0.9
+        desired_center_x = slope_left.rect.left + slope_left.rect.width * target_relative_x
+        surface_y = slope_left.rect.bottom - slope_left.rect.height * target_relative_x
+
+        self.player.rect.x = int(desired_center_x - self.player.hitbox.width / 2 - self.player.hitbox.x)
+        self.player.rect.y = int(surface_y - self.player.hitbox.height - self.player.hitbox.y)
+        self.player.on_ground = True
+
+        previous_x = self.player.rect.x
+        self.player.rect.x += self.player.speed
+        self.player.velocity_x = self.player.speed
+        self.player.handle_horizontal_collisions(platforms)
+
+        self.assertGreater(self.player.rect.x, previous_x)
+        self.assertFalse(self.player.blocked_right)
+
 
 if __name__ == "__main__":
     unittest.main()

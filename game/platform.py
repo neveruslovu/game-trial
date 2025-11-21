@@ -48,9 +48,54 @@ class Platform(pygame.sprite.Sprite):
 
         if not self.has_collision:
             return False
-                   
-        else:            
-            return self.collision_rect.colliderect(other_rect)
+
+        if self.platform_type == "triangle":
+            return self._check_triangle_collision(other_rect)
+
+        return self.collision_rect.colliderect(other_rect)
+
+    def _check_triangle_collision(self, other_rect):
+        """
+        Специальная проверка для наклонных (треугольных) тайлов.
+
+        Вместо полной прямоугольной коллизии используем фактическую поверхность склона,
+        чтобы игрок мог плавно переходить между соседними тайлами без "невидимых стен".
+        """
+        triangle_rect = self.rect
+
+        # Быстрая проверка по AABB
+        if not triangle_rect.colliderect(other_rect):
+            return False
+
+        # Определяем фактическую область пересечения по X
+        sample_left = max(other_rect.left, triangle_rect.left - 1)
+        sample_right = min(other_rect.right, triangle_rect.right + 1)
+
+        if sample_left >= sample_right:
+            return False
+
+        bottom = other_rect.bottom
+        top = other_rect.top
+
+        # Проверяем несколько точек по ширине пересечения (лево, центр, право)
+        sample_points = (
+            sample_left,
+            (sample_left + sample_right) * 0.5,
+            sample_right,
+        )
+
+        for point_x in sample_points:
+            relative_x = (point_x - triangle_rect.left) / triangle_rect.width
+            relative_x = max(0.0, min(1.0, relative_x))
+
+            slope_height = relative_x * triangle_rect.height
+            surface_y = triangle_rect.bottom - slope_height
+
+            # Толеранс помогает при высокой скорости движения
+            if bottom >= surface_y - 2 and top <= triangle_rect.bottom + 2:
+                return True
+
+        return False
     
     
     

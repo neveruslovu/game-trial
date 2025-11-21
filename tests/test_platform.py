@@ -52,6 +52,19 @@ class TestPlatform(unittest.TestCase):
 
         self.assertTrue(success)
 
+    def test_triangle_collision_uses_slope_surface(self):
+        """Треугольные платформы должны коллидировать только по поверхности склона"""
+        triangle = Platform(0, 400, 128, 128, "triangle")
+
+        # Прямоугольник "игрока" находится высоко над текущей высотой склона
+        mock_player_rect = pygame.Rect(100, 300, 40, 40)
+        self.assertFalse(triangle.check_collision(mock_player_rect))
+
+        # Перемещаем "игрока" на поверхность склона
+        surface_y = triangle.rect.bottom - 0.5 * triangle.rect.height
+        mock_player_rect.bottom = surface_y
+        self.assertTrue(triangle.check_collision(mock_player_rect))
+
 
 if __name__ == "__main__":
     unittest.main()

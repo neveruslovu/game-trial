@@ -249,56 +249,95 @@ class Player:
                 # Создаем точный хитбокс для определения направления
 
                 if platform.platform_type == "triangle":
-                    self.handle_triangle_collision(platform)
+                    # For horizontal movement on slopes, check if we should continue moving up
+                    self.handle_triangle_collision(platform, platforms)
+
+                    # If we're on a slope and moving horizontally, adjust vertical position
+                    player_hitbox = self.get_actual_hitbox()
+                    if self.on_ground and abs(self.velocity_x) > 0:
+                        # Calculate the expected Y position on the slope based on X position
+                        relative_x = (player_hitbox.centerx - platform.rect.left) / platform.rect.width
+                        relative_x = max(0.0, min(1.0, relative_x))
+
+                        # Calculate slope height at this position
+                        slope_height = relative_x * platform.rect.height
+                        expected_y = platform.rect.bottom - slope_height - self.hitbox.height - self.hitbox.y
+
+                        # If we're moving right and approaching the edge, look for next slope
+                        if relative_x > 0.7 and self.velocity_x > 0:
+                            for next_platform in platforms:
+                                if (next_platform.platform_type == "triangle" and 
+                                    abs(next_platform.rect.left - platform.rect.right) < 5):
+                                    # Found adjacent slope, adjust position to transition smoothly
+                                    next_relative_x = (player_hitbox.centerx - next_platform.rect.left) / next_platform.rect.width
+                                    next_relative_x = max(0.0, min(1.0, next_relative_x))
+                                    next_slope_height = next_relative_x * next_platform.rect.height
+                                    expected_y = next_platform.rect.bottom - next_slope_height - self.hitbox.height - self.hitbox.y
+                                    break
+
+                        # Smoothly adjust Y position to match slope
+                        if abs(self.rect.y - expected_y) < 20:  # Only adjust if difference is reasonable
+                            self.rect.y = expected_y
                     continue
+
                 # 🔥 ИСПРАВЛЕНИЕ: Используем правильные границы для разных типов платформ
                 if hasattr(platform, "collision_rect"):
                     platform_left = platform.collision_rect.left
                     platform_right = platform.collision_rect.right
+                    platform_top = platform.collision_rect.top
+                    platform_bottom = platform.collision_rect.bottom
                 else:
                     platform_left = platform.rect.left
                     platform_right = platform.rect.right
+                    platform_top = platform.rect.top
+                    platform_bottom = platform.rect.bottom
 
-                # 🔥 УЛУЧШЕННОЕ ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЯ
-                if self.velocity_x > 0 or (self.rect.x > self.old_x):  # Движение вправо
-                    # Check for step-up (allow climbing small obstacles like slope tops)
-                    step_height = 16  # Max pixels to step up
-                    if (
-                        self.on_ground
-                        and self.rect.bottom > platform.rect.top
-                        and (self.rect.bottom - platform.rect.top) <= step_height
-                    ):
-                        self.rect.bottom = platform.rect.top
-                        # Don't stop horizontal movement
-                    else:
-                        # 🔥 Блокируем движение только если реально упираемся боком в платформу
-                        if self.rect.bottom > platform.rect.top:
-                            # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
-                            self.rect.right = platform_left + self.hitbox.x
-                            self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
-                            # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
-                            self.blocked_right = True
+                player_hitbox = self.get_actual_hitbox()
 
-                elif self.velocity_x < 0 or (
-                    self.rect.x < self.old_x
-                ):  # Движение влево
-                    # Check for step-up (allow climbing small obstacles like slope tops)
-                    step_height = 16  # Max pixels to step up
-                    if (
-                        self.on_ground
-                        and self.rect.bottom > platform.rect.top
-                        and (self.rect.bottom - platform.rect.top) <= step_height
-                    ):
-                        self.rect.bottom = platform.rect.top
-                        # Don't stop horizontal movement
-                    else:
-                        # 🔥 Блокируем движение только если реально упираемся боком в платформу
-                        if self.rect.bottom > platform.rect.top:
-                            # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
-                            self.rect.left = platform_right - self.hitbox.x
-                            self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
-                            # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
-                            self.blocked_left = True
+                # Only handle as horizontal collision if there's significant vertical overlap
+                vertical_overlap = min(player_hitbox.bottom, platform_bottom) - max(player_hitbox.top, platform_top)
+
+                if vertical_overlap > 5:  # Only if there's meaningful overlap
+                    # 🔥 УЛУЧШЕННОЕ ОПРЕДЕЛЕНИЕ НАПРАВЛЕНИЯ
+                    if self.velocity_x > 0 or (self.rect.x > self.old_x):  # Движение вправо
+                        # Check for step-up (allow climbing small obstacles like slope tops)
+                        step_height = 16  # Max pixels to step up
+                        if (
+                            self.on_ground
+                            and player_hitbox.bottom > platform_top
+                            and (player_hitbox.bottom - platform_top) <= step_height
+                        ):
+                            self.rect.bottom = platform_top
+                            # Don't stop horizontal movement
+                        else:
+                            # 🔥 Блокируем движение только если реально упираемся боком в платформу
+                            if player_hitbox.bottom > platform_top:
+                                # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
+                                self.rect.right = platform_left + self.hitbox.x
+                                self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
+                                # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
+                                self.blocked_right = True
+
+                    elif self.velocity_x < 0 or (
+                        self.rect.x < self.old_x
+                    ):  # Движение влево
+                        # Check for step-up (allow climbing small obstacles like slope tops)
+                        step_height = 16  # Max pixels to step up
+                        if (
+                            self.on_ground
+                            and player_hitbox.bottom > platform_top
+                            and (player_hitbox.bottom - platform_top) <= step_height
+                        ):
+                            self.rect.bottom = platform_top
+                            # Don't stop horizontal movement
+                        else:
+                            # 🔥 Блокируем движение только если реально упираемся боком в платформу
+                            if player_hitbox.bottom > platform_top:
+                                # 🔥 ИСПРАВЛЕНИЕ: Используем реальный хитбокс для расчета
+                                self.rect.left = platform_right - self.hitbox.x
+                                self.velocity_x = 0  # 🔥 ОБНУЛЯЕМ СКОРОСТЬ ВМЕСТО ОТСКОКА
+                                # 🔥 УСТАНАВЛИВАЕМ ФЛАГ БЛОКИРОВКИ
+                                self.blocked_left = True
                 break
 
     def handle_vertical_collisions(self, platforms):
@@ -313,7 +352,7 @@ class Player:
             if self.check_collision(platform):
                 # 🔥 ОСОБАЯ ОБРАБОТКА ДЛЯ ТРЕУГОЛЬНИКОВ
                 if platform.platform_type == "triangle":
-                    self.handle_triangle_collision(platform)
+                    self.handle_triangle_collision(platform, platforms)
                     continue
 
                 # 🔥 ИСПРАВЛЕНИЕ: Используем правильные границы для разных типов платформ
@@ -345,7 +384,7 @@ class Player:
                     self.velocity_y = 0
                 break
 
-    def handle_triangle_collision(self, triangle):
+    def handle_triangle_collision(self, triangle, platforms=None):
         """Обрабатывает столкновение с треугольной платформой (правый треугольник, подъём слева направо)"""
         player_hitbox = self.get_actual_hitbox()
 
@@ -355,8 +394,10 @@ class Player:
         triangle_right = triangle.rect.right
         triangle_bottom = triangle.rect.bottom
 
-        # 🔥 FIX: Stricter bounds checking - reduce tolerance for edge detection
-        if player_center_x < triangle_left - 5 or player_center_x > triangle_right + 5:
+        # 🔥 FIX: More lenient bounds checking for smooth transitions
+        # Increased tolerance when moving horizontally to allow smooth tile transitions
+        bounds_tolerance = 10 if abs(self.velocity_x) > 0 else 5
+        if player_center_x < triangle_left - bounds_tolerance or player_center_x > triangle_right + bounds_tolerance:
             return
 
         # Нормализованная позиция по X (0.0 - левая точка, 1.0 - правая)
@@ -377,9 +418,28 @@ class Player:
 
         player_bottom = player_hitbox.bottom
 
+        # 🔥 NEW: Check for adjacent slope tiles when near edges
+        # This helps with smooth transitions between slope tiles
+        look_ahead_distance = 20  # pixels to look ahead
+
+        # Check if we're near the right edge and moving right
+        if (relative_x > 0.8 and self.velocity_x > 0 and platforms):
+            # Look for next triangle tile to the right
+            next_tile_x = triangle_right
+            next_tile_y = triangle_bottom
+
+            # Find any triangle tile at this position
+            for platform in platforms:
+                if (platform.platform_type == "triangle" and 
+                    abs(platform.rect.left - next_tile_x) < 5 and 
+                    abs(platform.rect.bottom - next_tile_y) < 5):
+                    # Found adjacent triangle tile, increase tolerance
+                    look_ahead_distance = 30
+                    break
+
         # 🔥 FIX: Adaptive tolerance at slope peak for smooth transition
         if relative_x > 0.85:
-            tolerance = 15  # Larger tolerance at peak
+            tolerance = look_ahead_distance  # Use larger tolerance at peak or when transitioning
         else:
             tolerance = 5
 

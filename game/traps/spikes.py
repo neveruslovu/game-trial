@@ -7,7 +7,17 @@ class Spikes(pygame.sprite.Sprite):
         super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.damage = 10  # Урон от шипов
-        
+
+        # Create a more accurate collision area for the spikes
+        # Only the bottom part of the sprite actually contains spikes
+        spike_height_ratio = 0.5  # Spikes only in bottom half
+        self.collision_rect = pygame.Rect(
+            x, 
+            y + height * (1 - spike_height_ratio),  # Start from middle
+            width, 
+            height * spike_height_ratio  # Only bottom half
+        )
+
         # Загрузка спрайта
         try:
             self.image = asset_loader.load_image("tiles/spikes.png", scale=1)
@@ -25,13 +35,14 @@ class Spikes(pygame.sprite.Sprite):
                     (i + width // 4, height)
                 ]
                 pygame.draw.polygon(self.image, (200, 30, 30), points)
-    
+
     def check_collision(self, player):
         """Проверка столкновения с игроком"""
-        if self.rect.colliderect(player.rect) and player.is_alive:
+        # Use the more accurate collision rect
+        if self.collision_rect.colliderect(player.get_actual_hitbox()) and player.is_alive:
             return True
         return False
-    
+
     def draw(self, screen, camera):
         """Отрисовка шипов"""
         screen.blit(self.image, camera.apply(self.rect))
